@@ -46,7 +46,7 @@ int main(int argc, char **argv)
 /* 파일 상태 정보를 출력 */
 void printStat(char *pathname, char *file, struct stat *st) 
 {
-    printf("%5ld ", st->st_blocks);
+    printf("%5lld ", st->st_blocks);
     printf("%c%s ", type(st->st_mode), perm(st->st_mode));
     printf("%3ld ", (long)st->st_nlink);
     printf("%s %s ", getpwuid(st->st_uid)->pw_name,
