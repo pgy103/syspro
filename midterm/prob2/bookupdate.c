@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "book.h"
 int main(int argc, char *argv[])
 {
@@ -15,13 +16,13 @@ int main(int argc, char *argv[])
 	exit(2);
 	}
 	do {
-	printf("Enter studentID to be modified: ");
+	printf("Enter BookID to be modified: ");
 	if (scanf("%d", &id) == 1) {
 		fseek(fp, (id - START_ID) * sizeof(rec), SEEK_SET);
 	if ((fread(&rec, sizeof(rec), 1, fp) > 0)&&(rec.id != 0)) {
 		printf("BookID: %8d Name: %4s Score: %4d\n", rec.id, rec.name,rec.score);
 		printf("Enter new score: ");
-		scanf("%d", &rec.score);
+		scanf("%hd", &rec.score);
 		fseek(fp, -sizeof(rec), SEEK_CUR);
 		fwrite(&rec, sizeof(rec), 1, fp);
 	} else printf("Record %d none\n", id);
