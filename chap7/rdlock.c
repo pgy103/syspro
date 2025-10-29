@@ -1,52 +1,66 @@
 #include <stdio.h>
-#include <sys/types.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <stdlib.h>
-#include "student.h"
+#include <string.h>
 
-/* 잠금을 이용한 학생 데이터베이스 질의 프로그램 */
-#define START_ID 1001001  // 학번 시작 번호 (test.txt 첫 학생 ID 기준)
+struct student {
+    int id;
+    char name[20];
+    int score;
+};
 
 int main(int argc, char *argv[]) {
-    int fd, id;
-    struct student record;
+    int fd;
     struct flock lock;
+    struct student s;
+    int id, found = 0;
+    FILE *fp;
+    char line[100];
 
     if (argc < 2) {
-        fprintf(stderr, "How to use: %s File\n", argv[0]);
+        fprintf(stderr, "Usage: %s file\n", argv[0]);
         exit(1);
     }
 
-    if ((fd = open(argv[1], O_RDONLY)) == -1) {
+    fd = open(argv[1], O_RDONLY);
+    if (fd == -1) {
         perror(argv[1]);
         exit(2);
     }
 
-    printf("\nEnter StudentID to search : ");
-    while (scanf("%d", &id) == 1) {
-        lock.l_type = F_RDLCK;
-        lock.l_whence = SEEK_SET;
-        lock.l_start = (id - START_ID) * sizeof(record);
-        lock.l_len = sizeof(record);
+    printf("Enter StudentID to search: ");
+    scanf("%d", &id);
 
-        if (fcntl(fd, F_SETLKW, &lock) == -1) { // 읽기 잠금
-            perror(argv[1]);
-            exit(3);
+    // 읽기 잠금 설정
+    lock.l_type = F_RDLCK;
+    lock.l_whence = SEEK_SET;
+    lock.l_start = 0;
+    lock.l_len = 0;
+    fcntl(fd, F_SETLKW, &lock);
+
+    fp = fdopen(fd, "r");
+
+    // 한 줄씩 읽으며 검색
+    while (fgets(line, sizeof(line), fp)) {
+        sscanf(line, "%d %s %d", &s.id, s.name, &s.score);
+        if (s.id == id) {
+            printf("Name:%s\tStuID:%d\tScore:%d\n", s.name, s.id, s.score);
+            found = 1;
+            break;
         }
-
-        lseek(fd, (id - START_ID) * sizeof(record), SEEK_SET);
-        if ((read(fd, (char *)&record, sizeof(record)) > 0) && (record.id != 0))
-            printf("Name: %s\t StuID: %d\t Score: %d\n", record.name, record.id, record.score);
-        else
-            printf("No record %d\n", id);
-
-        lock.l_type = F_UNLCK;
-        fcntl(fd, F_SETLK, &lock); // 잠금 해제
-        printf("\nEnter StudentID to search : ");
     }
 
+    if (!found)
+        printf("Student ID %d not found.\n", id);
+
+    fclose(fp);
+
+    // 잠금 해제
+    lock.l_type = F_UNLCK;
+    fcntl(fd, F_SETLK, &lock);
     close(fd);
-    exit(0);
+
+    return 0;
 }
 
